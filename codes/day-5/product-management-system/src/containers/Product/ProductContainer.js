@@ -1,42 +1,35 @@
 import React, { Component } from 'react'
 import ProductList from '../../components/Product/ProductList/ProductList'
-import * as ProductService from '../../service/productService'
 import './ProductContainer.css'
+import { getProductsAsync, getProductsInitiate } from '../../redux/actions/productActions'
+import { connect } from 'react-redux'
 
-export default class ProductContainer extends Component {
-    state = {
-        products: null
-    }
+class ProductContainer extends Component {
+
     getData = () => {
-        ProductService.getProducts()
-            .then((resp) => this.setState({ products: resp.data }))
-            .catch(e => console.log(e))
+
     }
     componentDidMount() {
-        this.getData();
+        this.props.getProducts();
     }
     removeProduct = (productId) => {
-        ProductService.deleteProduct(productId)
-            .then(resp => {
-                if (resp.statusText === 'OK') {
-                    //locally update state by removing the same product
-                    this.getData()
-                }
-            })
-            .catch(e => console.log(e))
+
     }
 
     render() {
-        const { products } = this.state;
+        const { products, error, loading } = this.props;
         let design = <span>Loading...</span>;
-        if (products !== null && products.length > 0) {
+        if (error !== '') {
+            design = <span>{this.props.error}</span>
+        }
+        if (!loading) {
             design = (
                 <div className='panel panel-primary panelStyle'>
                     <div className='panel panel-heading'>
                         <h4>{products.length} Record(s) found...</h4>
                     </div>
                     <div className='panel panel-body'>
-                        <ProductList productList={this.state.products} removeCallback={this.removeProduct} />
+                        <ProductList productList={products} removeCallback={this.removeProduct} />
                     </div>
                 </div>
             );
@@ -44,3 +37,22 @@ export default class ProductContainer extends Component {
         return design;
     }
 }
+
+const mapStatePropertiesToCompProperties = (state) => {
+    return {
+        products: state.allProductsReducer.products,
+        error: state.allProductsReducer.errorMessage,
+        loading: state.allProductsReducer.loading
+    }
+}
+
+const mapDispatcherToCompProperties = (dispatch) => {
+    return {
+        // getProducts: () => dispatch(getProductsAsync())
+        getProducts: () => dispatch(getProductsInitiate())
+    }
+}
+
+const hoc = connect(mapStatePropertiesToCompProperties, mapDispatcherToCompProperties);
+export default hoc(ProductContainer);
+
